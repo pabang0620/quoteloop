@@ -12,7 +12,7 @@ export default function SupplierPane({ state, deal, events }) {
   const rejected = mine.find((e) => e.kind === 'draft_rejected')
   const pc = (bps) => `${bps / 100}%`
   return (
-    <section className="pane">
+    <section className="sup">
       <h2>Northbeam Supply <small>supplier service</small></h2>
       {hot && (
         <div className="chips">

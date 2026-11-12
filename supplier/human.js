@@ -9,9 +9,18 @@ import { policyQuote } from './agent/policy.js'
 import { quoteHash } from '../shared/protocol.js'
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
-const shell = (title, body) => `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
-<style>body{font:16px system-ui;margin:0;background:#f5f7fa;color:#1c2b39}main{max-width:460px;margin:40px auto;background:#fff;padding:28px;border-radius:12px;box-shadow:0 2px 12px #0001}
-table{width:100%;border-collapse:collapse;margin:12px 0}td{padding:6px 0;border-bottom:1px solid #eef1f4}td:last-child{text-align:right}button{width:100%;padding:12px;border:0;border-radius:8px;background:#0070e0;color:#fff;font-size:16px;cursor:pointer}small{color:#5a6b7b}</style><main>${body}</main>`
+// Same Purchase Order Ledger look as the buyer's desk (web/src/styles.css): paper, serif heading, mono figures, double-ruled total.
+const FONTS = 'https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap'
+const shell = (title, body) => `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><link rel="stylesheet" href="${FONTS}">
+<style>:root{color-scheme:light}body{font:15px/1.45 'IBM Plex Sans',system-ui,sans-serif;margin:0;background:#efeae0;color:#1d1a16;-webkit-font-smoothing:antialiased}
+main{position:relative;max-width:520px;margin:40px auto;background:#fbf8f2;padding:32px 40px;box-shadow:0 2px 0 rgba(29,26,22,.06),0 18px 40px rgba(29,26,22,.10)}
+main::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:repeating-linear-gradient(90deg,#1f3a5f 0 18px,transparent 18px 24px)}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:#6b6358}h2{font:600 26px/1.2 'Source Serif 4',Georgia,serif;margin:4px 0 14px}
+table{width:100%;border-collapse:collapse;margin:12px 0 18px;font-size:14px;border-top:1px solid #1d1a16}td{padding:8px 0;border-bottom:1px solid #d6cdbd}td:last-child{text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;white-space:nowrap}
+tr.total td{border-top:1px solid #1d1a16;border-bottom:3px double #1d1a16;font-weight:600}tr.total td:last-child{font-size:22px}
+button{width:100%;padding:12px;border:1px solid #1f3a5f;border-radius:2px;background:#1f3a5f;color:#fbf8f2;font:inherit;cursor:pointer}button:focus-visible{outline:3px solid #1f3a5f;outline-offset:2px}
+small{display:block;margin-top:10px;color:#6b6358;font-size:12px}.stamp{position:absolute;right:28px;top:26px;transform:rotate(-8deg);border:3px solid #2e6b3f;color:#2e6b3f;font:500 15px/1.2 'IBM Plex Mono',monospace;letter-spacing:.12em;padding:4px 12px;border-radius:3px}
+@media (max-width:560px){main{margin:16px;padding:28px 18px}h2{font-size:22px}.stamp{right:12px;top:12px;font-size:12px}}</style><main>${body}</main>`
 
 // A person without a buyer agent opens a quote link from the supplier's agent and pays on PayPal.
 export function createHumanQuote(ctx, { sku, qty, clientKey }) {
@@ -30,9 +39,9 @@ function policyHumanQuote(ctx, neg, request) {
 export function quotePage(ctx, quoteId) {
   const neg = getNegotiation(ctx.db, quoteId)
   const o = latestQuote(neg).options[0]
-  return shell(`Quote ${quoteId}`, `<h2>${esc(ctx.config.name)} quote ${esc(quoteId)}</h2>
+  return shell(`Quote ${quoteId}`, `<div class="eyebrow">Quote by link, from the supplier's sales agent</div><h2>${esc(ctx.config.name)} quote ${esc(quoteId)}</h2>
 <table><tr><td>${esc(o.name)}</td><td>${o.qty} x ${fmt(o.unit_cents)}</td></tr>
-<tr><td>Pay-now discount</td><td>-${fmt(o.pay_now_discount_cents)}</td></tr><tr><td><b>Total</b></td><td><b>${fmt(o.total_cents)}</b></td></tr></table>
+<tr><td>Pay-now discount</td><td>-${fmt(o.pay_now_discount_cents)}</td></tr><tr class="total"><td>Total</td><td>${fmt(o.total_cents)}</td></tr></table>
 <form method="post" action="/q/${esc(quoteId)}/pay"><button>Pay with PayPal (${ctx.primary.mode === 'mock' ? 'bundled mock, no real money' : 'sandbox'})</button></form><small>Quoted by the supplier's sales agent. Status: ${esc(neg.status)}.</small>`)
 }
 
@@ -79,6 +88,6 @@ export async function finishHumanPayment(ctx, quoteId) {
   ctx.db.del('reservations', quoteId)
   ctx.db.put('negotiations', quoteId, { ...ctx.db.get('negotiations', quoteId), status: 'paid', charge: { capture_id: capture.id, order_id: done.id, invoice_status: invoiceStatus } })
   ctx.events.emit('paid', { quote_id: quoteId, invoice_number: neg.invoice.invoice_number, invoice_status: invoiceStatus, human: true, sku: option.sku, stock_after: item.stock })
-  return shell('Paid', `<h2>Paid</h2><p>Quote ${esc(quoteId)} is paid: ${fmt(option.total_cents)}. Invoice ${esc(neg.invoice.invoice_number)} is marked ${invoiceStatus === 'PAID' ? 'PAID' : 'for review'}.</p><small>PayPal capture ${esc(capture.id)}</small>`)
+  return shell('Paid', `<div class="stamp">PAID</div><div class="eyebrow">Receipt, ${esc(ctx.config.name)}</div><h2>Paid</h2><p>Quote ${esc(quoteId)} is paid: ${fmt(option.total_cents)}. Invoice ${esc(neg.invoice.invoice_number)} is marked ${invoiceStatus === 'PAID' ? 'PAID' : 'for review'}.</p><small>PayPal capture ${esc(capture.id)}</small>`)
 }
 

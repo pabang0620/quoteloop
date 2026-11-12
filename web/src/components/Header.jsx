@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { call } from '../api.js'
+import { call, usd } from '../api.js'
 
 // What the rogue-charge button tells the visitor: what happens next and at what time.
 function rogueDone(paypalMode, lagMs) {
@@ -9,6 +9,7 @@ function rogueDone(paypalMode, lagMs) {
 }
 
 export default function Header({ mandates, mandateId, setMandateId, mode, setMode, llm, llmLabel, paypalMode, text, setText, presets = {}, onRun, running, onHuman, deal, onChanged, supplierBase, ck, lagMs }) {
+  const mandate = mandates.find((m) => m.mandate_id === mandateId)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ cap: '130.00', ref: '127.00', over: '10', auto: '500.00', budget: '1840.00' })
   const [err, setErr] = useState(null)
@@ -44,7 +45,15 @@ export default function Header({ mandates, mandateId, setMandateId, mode, setMod
 
   return (
     <header className="head">
-      <div className="brand"><span className="logo">QuoteLoop</span><span className="deal">{deal ? `Deal ${deal.quote_id || deal.deal_id}` : 'No deal yet'}</span></div>
+      <div className="top">
+        <span className="logo"><img className="brand-logo brand-logo--chip" src="/logo-512.png" width="28" height="28" alt="QuoteLoop" />QuoteLoop <i>purchase desk</i></span>
+        <span className="deal">{deal ? `Deal ${deal.quote_id || deal.deal_id}` : 'No deal yet'}</span>
+        <span className="sp" />
+        <div className="topbtns">
+          <button className="ghost" onClick={onHuman} title="A buyer with no agent opens the supplier's quote link">Buyer with no agent</button>
+          <button className="primary" onClick={onRun} disabled={running}>{running ? 'Running...' : 'Run deal'}</button>
+        </div>
+      </div>
       <div className="controls">
         <label>Mandate
           <select value={mandateId} onChange={(e) => setMandateId(e.target.value)}>
@@ -68,9 +77,8 @@ export default function Header({ mandates, mandateId, setMandateId, mode, setMod
             <option value="policy">Rules (fallback, same tools)</option>
           </select>
         </label>
-        <button className="primary" onClick={onRun} disabled={running}>{running ? 'Running...' : 'Run deal'}</button>
-        <button className="ghost" onClick={onHuman} title="A buyer with no agent opens the supplier's quote link">Buyer with no agent</button>
       </div>
+      {mandate && <p className="hint">{mandate.issuer.company} authorizes this buyer agent to purchase approved items up to {usd(mandate.negotiation.auto_approve_cents)} per order within the mandate. Larger orders need a person's approval.</p>}
       <p className="hint">{paypalMode === 'mock' ? 'Run deal = one deal on the bundled mock PayPal (same calls and response shapes). No PayPal login needed.' : 'Run deal = one deal on the sandbox PayPal account. No PayPal login needed.'}</p>
       <details className="demo">
         <summary>Demo controls: make the supplier misbehave (only for you)</summary>

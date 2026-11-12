@@ -55,7 +55,7 @@ We found no public figure for the cost of email quoting at a 12-site business, s
 **What the demo proves today, and what needs PayPal or partners.**
 - Proven in the app on the bundled mock, and with tests: the whole loop, the mandate rules, the draft check, co-signatures, the audit alert and pause, per-visitor demo state.
 - Proven on the PayPal sandbox (VERIFY 2026-11-12, ids in the app's Sandbox evidence tab): Vault setup and payment tokens for a personal and a business payer, a vaulted Orders capture with no payer present, duplicate `invoice_id` refused, invoice send without email and draft delete, `PayPal-Request-Id` replay, SDK defaults, `Prefer: return=representation`, refunds COMPLETED.
-- Needs PayPal: a buyer-owned REST app for the payer-side audit (the Transaction Search permission is now granted and our sandbox charges are listed with the co-signature hash, but only from the supplier account's side, VERIFY 7 partial, 10 and 12 PASS); recording an Orders capture as invoice method PAYPAL answered 404, so we record method OTHER with the capture id; verifying a payment mandate at charge time is the proposal above.
+- Needs PayPal: a buyer-owned REST app for the payer-side audit (the Transaction Search permission is now granted and a supplier-account Reporting recheck matched both visitors’ signed charges and paused only the visitor with the unsigned charge, VERIFY 7 partial, 10 and 12 PASS); recording an Orders capture as invoice method PAYPAL answered 404, so we record method OTHER with the capture id; verifying a payment mandate at charge time is the proposal above.
 - Needs partners: a supplier that runs the supplier agent on its own price list, and a buyer company that signs a mandate.
 
 ## Challenges
@@ -84,12 +84,14 @@ Claude (Sonnet), Claude Agent SDK, Anthropic SDK, PayPal Vault v3, Orders v2, In
 
 ## Testing instructions
 
+**Try it:** https://quoteloop.35-216-2-121.sslip.io (hosted demo: bundled mock PayPal process, rules mode plus recorded Claude Sonnet runs; no login).
+
 Same steps as the README. Every visitor gets their own budget, deals and alerts.
 
 1. Open the demo (to run it yourself: `npm install`, `npm run build`, `npm start`, then http://localhost:4101). The first screen is ready: mandate **A Lean** is signed and the judge PayPal account is already saved with the supplier. No PayPal login is needed.
 2. Press **Run deal**: option b is filtered by the over-order rule, the buyer counters with pay-now, accepts at **$245.86**, and the settlement list shows VERIFY MATCH, CO-SIGN, the charge and the invoice marked PAID, plus the time the charge shows in PayPal activity and the time of the automatic judge-account refund.
 3. Switch the mandate to **B Bulk** and run again: 3 cases, **$339.98**, "Saved $14.02". Open the **Compare A vs B** tab.
-4. Type `Grinder burr set, 1 unit` and run: an approval card for **$1,180.00**. Press Approve; the agent verifies, co-signs and settles.
+4. Type `Grinder burr set, 1 unit` and run: an approval slip for **$1,180.00**. Press **Sign and approve**; the agent verifies, co-signs and settles.
 5. Open **Demo controls**, press "Add a Rush handling line to the next draft", run a deal: the buyer blocks the draft, it is deleted, nothing is charged.
 6. In **PayPal activity**, press Check: yesterday's deal is matched and refunded, and yesterday's $19.99 charge with no co-signature raises an alert that pauses co-signing until you press **Resume**.
 7. Press **Buyer with no agent**: a person opens the supplier's quote link and pays.

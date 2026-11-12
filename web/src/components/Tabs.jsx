@@ -18,16 +18,20 @@ function Audit({ buyer }) {
 
 function Activity({ buyer, onChanged }) {
   const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
   const last = buyer?.audit?.last
+  const payee = (buyer?.activity_side || last?.side) === 'payee'
   async function run() {
     setBusy(true)
-    try { await call('', 'POST', '/api/audit/run') } finally { setBusy(false); onChanged() }
+    setError('')
+    try { await call('', 'POST', '/api/audit/run') } catch (e) { setError(e.message) } finally { setBusy(false); onChanged() }
   }
   return (
     <div>
-      <p>The buyer agent reads this company's own PayPal activity and pairs each charge with the co-signature it issued. {buyer?.buyer?.paypal_mode === 'mock' ? `On the bundled mock a charge shows up ${Math.round((buyer?.search_lag_ms || 120000) / 60000)} min after it happens (PayPal documents up to 3 hours).` : 'PayPal documents up to 3 hours before a charge shows up here.'}</p>
+      <p>{payee ? 'The buyer agent checks supplier-account PayPal activity for QuoteLoop charges.' : 'The buyer agent checks payer-account activity for outgoing charges.'} Each charge is compared with the buyer’s co-signatures. {buyer?.buyer?.paypal_mode === 'mock' ? `On the bundled mock a charge shows up ${Math.round((buyer?.search_lag_ms || 120000) / 60000)} min after it happens (PayPal documents up to 3 hours).` : 'PayPal documents up to 3 hours before a charge shows up here.'}</p>
       <button className="primary" onClick={run} disabled={busy}>{busy ? 'Reading PayPal...' : 'Check PayPal activity'}</button>
-      {last && <p className="hint">Source: {last.source === 'bundled mock' ? 'bundled mock PayPal' : last.source}.{last.side === 'payee' ? ' This sandbox demo has one REST app (the supplier\'s), so only charges that carry a QuoteLoop invoice, co-signature or demo tag are checked; a buyer-owned app checks every outgoing charge.' : ''}</p>}
+      {error && <p role="alert">Could not refresh activity. {error} Try checking again.</p>}
+      {last && <p className="hint">Last check: {new Date(last.at).toLocaleString()}. Source: {last.source === 'bundled mock' ? 'bundled mock PayPal' : last.source}.{last.side === 'payee' ? ' This sandbox demo has one REST app (the supplier\'s), so only charges that carry a QuoteLoop invoice, co-signature or demo tag are checked; a buyer-owned app checks every outgoing charge.' : ''}</p>}
       {last?.unavailable && <div className="card block"><b>Transaction Search is not enabled for this PayPal app</b><p>{last.unavailable.message}</p></div>}
       {last && (
         <table><thead><tr><th>When</th><th>Invoice</th><th>Amount</th><th>Status</th><th>Note</th></tr></thead><tbody>

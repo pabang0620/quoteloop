@@ -110,7 +110,7 @@
       "id": "7",
       "status": "PARTIAL",
       "check": "Buyer-side Transaction Search shows the co-signature hash",
-      "why": "Permission granted. Earlier in-app charges 7UE89006K1324024J and 4H098055JS548532U show in Transaction Search with the co-signature hash as custom_field and the invoice number. Our only REST app belongs to the supplier, so this is the supplier account's view (BUYER_ACTIVITY_SIDE=payee); a payer-owned app was not available. New charges 6ET89834W30050123 and 2J9177124Y098483N had not appeared after 10 minutes (PayPal: up to 3 hours), so the in-app matched row is not yet recorded."
+      "why": "Permission granted. Earlier in-app charges 7UE89006K1324024J and 4H098055JS548532U show in Transaction Search with the co-signature hash as custom_field and the invoice number. Our only REST app belongs to the supplier, so this is the supplier account's view (BUYER_ACTIVITY_SIDE=payee); a payer-owned app was not available. On the Nov 13 KST read-only recheck, charges 6ET89834W30050123 and 2J9177124Y098483N matched their visitors; 0XD347862X366022X raised an alert and paused only its own visitor when the three sandbox rows were passed to the audit with a memory copy of the recorded co-signatures."
     },
     {
       "id": "8",

@@ -42,6 +42,10 @@ Run with `LLM_BACKEND=account` (your own Claude Code login, no API key) and `FOR
 
 Recorded transcripts: `npm run record:runs` ran M1, M2 and M3 once more on 2026-11-12 (account-mode Sonnet, bundled mock PayPal, both agents on the model, no retry needed) and saved each run, with both models' tool calls in order, their text and the timings, in `builtin/recorded-runs/`. M1 ended at $245.86, M2 at $265.07 on the recycled-cup substitute, M3 at $339.98. The page replays these when no model is connected and labels them "Recorded run: Claude Sonnet, 2026-11-12".
 
+## Follow-up to check 7 (2026-11-13 KST)
+
+Supplier-side Reporting returned all three recorded captures. The production audit function, using those three transaction records and a memory copy of the original co-signatures, matched 6ET89834W30050123 for visitor 1 and 2J9177124Y098483N for visitor 2. Only visitor 1 received the alert for unsigned 0XD347862X366022X and paused. Neither visitor saw the other visitor's normal charge. No new payment, refund or change to stored visitor state. The payer-side view was not tested.
+
 ## If check 7 fails (payer cannot see `custom_field`)
 
 The audit already falls back to amount and time and labels rows `matched weak`. Change these sentences before publishing:
@@ -72,3 +76,7 @@ If any differ, fix `mockpaypal/state.js` and the reader in `buyer/audit.js` / `b
 - If the page shows "being topped up": top up the judge account in the sandbox dashboard, then `POST /admin/judge-balance {"cents": 1000000}`.
 - Refunds run every 30 seconds in the supplier; `POST /admin/run-refunds` forces a pass.
 - Before filming the PayPal activity scene, run one deal at least 3 hours earlier so it shows as matched.
+
+## Hosting
+
+- **Result: PASS 2026-11-12.** https://quoteloop.35-216-2-121.sslip.io on a Google Cloud VM (nginx, Let's Encrypt, systemd). Mode: bundled mock PayPal process, rules mode plus recorded Claude Sonnet runs. The supplier and the mock PayPal approval page are served at https://quoteloop-supplier.35-216-2-121.sslip.io and https://quoteloop-paypal.35-216-2-121.sslip.io (approval pages only). `GET /` and the health endpoint return 200 over https. Walked headless against the https host: Testing instructions steps 1 to 7 (A Lean $245.86, B Bulk $339.98 saved $14.02, grinder approval $1,180.00, rush line blocked, rogue $19.99 alert, buyer with no agent paid through the mock approval page and quote link).

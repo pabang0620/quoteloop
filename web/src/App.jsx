@@ -71,9 +71,8 @@ export default function App() {
       />
       <p className="lede">You are watching two companies' agents trade. Each runs as its own service with its own PayPal account.</p>
       <Notices buyer={buyer} supplier={supplier} deal={deal} error={error} />
-      <div className="panes">
-        <BuyerPane state={buyer.data} deal={deal} mandateId={mandateId} events={buyerEvents} onChanged={reload} />
-        <SupplierPane state={supplier.data} deal={deal} events={supplierEvents} />
+      <div className="desk">
+        <BuyerPane state={buyer.data} deal={deal} mandateId={mandateId} events={buyerEvents} onChanged={reload} supplierSlot={<SupplierPane state={supplier.data} deal={deal} events={supplierEvents} />} />
       </div>
       <Tabs buyer={buyer.data} supplier={supplier.data} buyerEvents={buyerEvents} supplierEvents={supplierEvents} supplierBase={supplierBase} onChanged={reload} />
     </div>

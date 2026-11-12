@@ -141,6 +141,7 @@ export function createBuyerApp(overrides = {}, injected = {}) {
         buyer: { id: config.buyerId, company: config.company, admin: config.admin, paypal_mode: paypal.mode, kid: signer.kid },
         llm_available: Boolean(ctx.llm),
         search_lag_ms: config.searchLagMs,
+        activity_side: config.activitySide === 'payee' ? 'payee' : 'payer',
         llm_label: llmLabel(ctx.llm),
         visitor,
         supplier: ctx.card ? { id: ctx.card.supplier_id, name: ctx.card.name, kid: ctx.card.kid } : null,

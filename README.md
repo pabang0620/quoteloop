@@ -1,4 +1,8 @@
+<img src="web/public/logo-512.png" width="128" alt="logo" />
+
 # QuoteLoop
+
+**Try it:** https://quoteloop.35-216-2-121.sslip.io (hosted demo: bundled mock PayPal process, rules mode plus recorded Claude Sonnet runs; no login).
 
 Maya buys supplies for 12 cafes (a demo persona), and her reorders still start with quotes that go back and forth by email. QuoteLoop gives her company and its supplier one AI agent each: the two agents negotiate the quote by signed messages and settle it on PayPal (saved PayPal account, invoice, capture) without a human click inside her limits. You can trust it because code, not the model, holds the money rules: an invoice that differs from the agreed quote is never sent, every charge carries her agent's co-signature for that exact amount, and her agent checks PayPal's own records for any charge without one.
 
@@ -87,7 +91,7 @@ Every visitor gets their own budget, deals and alerts (a server-issued cookie), 
 1. Open the demo (to run it yourself: `npm install`, `npm run build`, `npm start`, then http://localhost:4101). The first screen is ready: mandate **A Lean** is signed and the judge PayPal account is already saved with the supplier. No PayPal login is needed.
 2. Press **Run deal**. Read the left (buyer) and right (supplier) panes: option b is filtered by the over-order rule, the buyer counters with pay-now, accepts at **$245.86**, and the settlement list shows VERIFY MATCH, CO-SIGN, the charge and the invoice marked PAID. A judge-account charge is refunded automatically a few minutes later (2 minutes on the bundled mock, 10 minutes on the sandbox; the settlement list shows the time; sandbox refunds were verified COMPLETED, VERIFY 11). The same list says when the charge shows in PayPal activity (2 minutes on the bundled mock, up to 3 hours on PayPal).
 3. Switch the mandate to **B Bulk** and run again: 3 cases, **$339.98**, "Saved $14.02". Open the **Compare A vs B** tab.
-4. Type `Grinder burr set, 1 unit` as the request (or pick it under Examples) and run: an approval card appears for $1,180.00. Press Approve, and the agent verifies, co-signs and settles.
+4. Type `Grinder burr set, 1 unit` as the request (or pick it under Examples) and run: an approval slip appears for $1,180.00. Press **Sign and approve**, and the agent verifies, co-signs and settles.
 5. Open **Demo controls**, press "Add a Rush handling line to the next draft", run a deal: the buyer blocks the draft, it is deleted at PayPal, nothing is charged.
 6a. In **PayPal activity**, press Check. Yesterday's deal shows as refunded. Yesterday's $19.99 charge has no co-signature, so it raises an alert and pauses co-signing. Press **Resume** to acknowledge it for good.
 6b. Press "Charge $19.99 with no co-signature" in Demo controls. The page tells you when it will show up (2 minutes on the bundled mock, up to 3 hours on a real sandbox). Press Check again then. The table shows only your own charges and the shared seeded history, and says if it read the mock or the PayPal sandbox. Other visitors' charges are counted in one line below it.

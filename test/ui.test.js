@@ -57,7 +57,7 @@ test('screens render the data of paid, blocked and approval-pending deals', asyn
     assert.match(sup, /PAID/)
     assert.match(sup, /floor \$112\.00/)
 
-    assert.match(html(createElement(Header, { mandates: state.mandates, mandateId: 'MND-A-LEAN', setMandateId() {}, mode: 'policy', setMode() {}, llm: true, llmLabel: 'Claude Sonnet (local account)', paypalMode: 'mock', text: '12oz hot cups, 2 cases', setText() {}, onRun() {}, running: false, onHuman() {}, deal: paidA, onChanged() {}, supplierBase: 'http://x', ck: 'c' })), /Run deal/)
+    assert.match(html(createElement(Header, { mandates: state.mandates, mandateId: 'MND-A-LEAN', setMandateId() {}, mode: 'policy', setMode() {}, llm: true, llmLabel: 'Claude Sonnet (local account)', paypalMode: 'mock', text: '12oz hot cups, 2 cases', setText() {}, onRun() {}, running: false, onHuman() {}, deal: paidA, onChanged() {}, supplierBase: 'http://x', ck: 'c' })), /Run deal[\s\S]*authorizes this buyer agent[\s\S]*\$500\.00 per order/)
     assert.match(html(createElement(Header, { mandates: state.mandates, mandateId: 'MND-A-LEAN', setMandateId() {}, mode: 'claude', setMode() {}, llm: true, llmLabel: 'Claude Sonnet (local account)', paypalMode: 'mock', text: 'x', setText() {}, onRun() {}, running: false, onHuman() {}, deal: paidA, onChanged() {}, supplierBase: 'http://x', ck: 'c' })), /the model reads this sentence[\s\S]*Claude Sonnet \(local account\)[\s\S]*bundled mock PayPal/)
     const traced = { ...paidA, mode: 'claude', model: { label: 'Claude Sonnet (local account)', name: 'claude-sonnet-5-5' }, tool_calls: [{ name: 'evaluate_quote', input: {}, ok: true, summary: 'recommends counter Q-1-v1-a' }, { name: 'counter', input: { option_id: 'Q-1-v1-a', pay_now: true }, ok: true, summary: 'quote v2 with 1 option(s)' }] }
     const traceHtml = html(createElement(BuyerPane, { state, deal: traced, mandateId: 'MND-A-LEAN', events: bev, onChanged() {} }))
@@ -68,7 +68,8 @@ test('screens render the data of paid, blocked and approval-pending deals', asyn
 
     const T = await vite.ssrLoadModule('/src/components/Tabs.jsx')
     assert.match(html(createElement(T.Audit, { buyer: state })), /MND-A-LEAN/)
-    assert.match(html(createElement(T.Activity, { buyer: state, onChanged() {} })), /matched/)
+    assert.match(html(createElement(T.Activity, { buyer: state, onChanged() {} })), /Last check:[\s\S]*matched/)
+    assert.match(html(createElement(T.Activity, { buyer: { ...state, activity_side: 'payee', audit: {} }, onChanged() {} })), /checks supplier-account PayPal activity/)
     assert.match(html(createElement(T.Messages, { events: bev, label: 'Buyer service' })), /deal_started|quote_received/)
     assert.match(html(createElement(T.Signatures, { buyer: state, supplier: sstate })), /Ed25519/)
     assert.match(html(createElement(T.Connect, { buyer: state })), /Connected: judge account/)
