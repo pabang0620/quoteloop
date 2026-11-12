@@ -27,7 +27,7 @@ Maya buys supplies for 12 cafes (a demo persona). Her company signs one mandate 
 - Two Claude tool loops, one per company (`claude-sonnet-5-5`). The model picks moves; it never types an amount. Supplier tools price from the price list and take option ids; buyer tools re-check the mandate on accept and refuse to co-sign unless the draft check passed.
 - PayPal: Vault v3 setup and payment tokens, Orders v2 capture with `vault_id`, `invoice_id` and `custom_id`, Invoicing (draft, send without email, delete, record payment and refund), refunds, Transaction Search, and the `INVOICING.INVOICE.PAID` webhook. Vault, Orders, refunds and Transaction Search go through the APIMatic-generated PayPal TypeScript SDK; Invoicing and Catalog through REST and the PayPal Agent Toolkit.
 - Money is integer cents computed by code. Every PayPal write stores a claim row first and replays a lost answer with the same `PayPal-Request-Id`.
-- React 19 and Vite for the page, Express and zod on the services, 123 `node:test` tests with no network.
+- React 19 and Vite for the page, Express and zod on the services, `node:test` tests with no network.
 
 ## Where AI is used, and what we actually ran
 

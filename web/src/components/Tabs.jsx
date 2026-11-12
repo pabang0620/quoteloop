@@ -34,7 +34,7 @@ function Activity({ buyer, onChanged }) {
           {last.rows.map((r, i) => (
             <tr key={`${r.transaction_id || r.quote_id}-${i}`} className={r.status === 'alert' ? 'rowbad' : ''}>
               <td>{new Date(r.at).toLocaleString()}</td><td>{r.invoice_id || '-'}</td><td>{money(r.amount)}</td>
-              <td><span className={`badge ${r.status.startsWith('matched') ? 'good' : r.status === 'alert' ? 'bad' : ''}`}>{r.status === 'matched' || r.status === 'matched_weak' ? (r.refunded ? 'matched / refunded' : r.status.replace('_', ' ')) : r.status.replaceAll('_', ' ')}</span></td>
+              <td><span className={`badge ${r.status.startsWith('matched') ? 'good' : r.status === 'alert' ? 'bad' : ''}`}>{r.status === 'matched' || r.status === 'matched_weak' ? (r.refunded ? 'refunded' : r.status.replace('_', ' ')) : r.status.replaceAll('_', ' ')}</span></td>
               <td>{r.note}{r.status === 'pending' && r.visible_by ? ` Press Check again after ${new Date(r.visible_by).toLocaleTimeString()}.` : ''}</td>
             </tr>
           ))}

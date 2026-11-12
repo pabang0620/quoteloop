@@ -72,22 +72,7 @@ Set `FORCE_MOCK=0`, the supplier and buyer sandbox keys, and `SUPPLIER_PRESET_VA
 
 ### Environment variables
 
-Nothing is required. The defaults run everything on the bundled mock. Full list with comments: `.env.example`.
-
-| Variable | Purpose |
-|---|---|
-| `FORCE_MOCK` | `1` = never use real PayPal or Claude credentials, even if set |
-| `LLM_BACKEND` | `account` = run both agents through your own Claude Code login (local use, no API key is read or sent) |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | optional API-key backend for the hosted demo, model defaults to `claude-sonnet-5-5` |
-| `SUPPLIER_PAYPAL_CLIENT_ID`, `SUPPLIER_PAYPAL_CLIENT_SECRET`, `SUPPLIER_PRESET_VAULT_ID` | supplier sandbox app and the judge account's saved PayPal |
-| `BUYER_PAYPAL_CLIENT_ID`, `BUYER_PAYPAL_CLIENT_SECRET` | buyer sandbox app (needs Transaction Search for the audit) |
-| `BUYER_ACTIVITY_SIDE` | `payer` (default, the buyer app belongs to the paying account) or `payee` (sandbox demo with one shared REST app) |
-| `ENV_FILE` | settings file to read instead of `.env` |
-| `SUPPLIER_PAYPAL_WEBHOOK_ID` | id of the webhook registered in the PayPal dashboard for `INVOICING.INVOICE.PAID` (the mock needs none) |
-| `SUPPLIER_ADMIN_TOKEN`, `BUYER_ADMIN_TOKEN` | enable the owner price-list edit and `/admin/*` (balance, refunds, `POST /admin/daily-check`, `POST /admin/reset-demo`) |
-| `CLAUDE_RUNS_PER_CLIENT_PER_DAY`, `CLAUDE_RUNS_PER_DAY`, `LLM_LIVE_UNTIL` | model run caps and end date |
-| `MOCK_TXN_LAG_MS` | delay before a charge shows in the bundled mock's activity (default 2 minutes; PayPal documents up to 3 hours) |
-| `JUDGE_REFUND_DELAY_MS` | judge-account refund delay (empty = 2 minutes on the bundled mock, 10 minutes on the sandbox) |
+Nothing is required. The defaults run everything on the bundled mock. The full table is in [`docs/CONFIG.md`](docs/CONFIG.md), and `.env.example` has comments.
 
 Run the services separately if you prefer: `npm run start:mockpaypal`, `npm run start:supplier`, `npm run start:buyer`.
 
@@ -104,7 +89,8 @@ Every visitor gets their own budget, deals and alerts (a server-issued cookie), 
 3. Switch the mandate to **B Bulk** and run again: 3 cases, **$339.98**, "Saved $14.02". Open the **Compare A vs B** tab.
 4. Type `Grinder burr set, 1 unit` as the request (or pick it under Examples) and run: an approval card appears for $1,180.00. Press Approve, and the agent verifies, co-signs and settles.
 5. Open **Demo controls**, press "Add a Rush handling line to the next draft", run a deal: the buyer blocks the draft, it is deleted at PayPal, nothing is charged.
-6. In **PayPal activity**, press Check: yesterday's deal is matched and refunded, and yesterday's $19.99 charge with no co-signature raises an alert that pauses co-signing until you press **Resume** (Resume acknowledges it for good). The demo button "Charge $19.99 with no co-signature" adds a new one for you only; the page tells you the time it shows up (2 minutes later on the bundled mock, within about 3 hours on a real sandbox), then press Check again. The activity table says whether it was read from the bundled mock or the PayPal sandbox. It lists only your own charges and the shared seeded history; other visitors' judge-account charges are counted in one line under the table.
+6a. In **PayPal activity**, press Check. Yesterday's deal shows as refunded. Yesterday's $19.99 charge has no co-signature, so it raises an alert and pauses co-signing. Press **Resume** to acknowledge it for good.
+6b. Press "Charge $19.99 with no co-signature" in Demo controls. The page tells you when it will show up (2 minutes on the bundled mock, up to 3 hours on a real sandbox). Press Check again then. The table shows only your own charges and the shared seeded history, and says if it read the mock or the PayPal sandbox. Other visitors' charges are counted in one line below it.
 7. Press **Buyer with no agent**: a person opens the supplier's quote link and pays through PayPal (the mock approval page in the bundled demo, PayPal's sandbox page when sandbox keys are set, which needs a sandbox payer login).
 8. If the daily live-run limit (3 per visitor, 60 in total) or the judge account minimum balance is reached, the same flow runs on simulated PayPal calls and the page says so.
 9. Open the **Price list** tab: the supplier's tiers, floor, stock and concessions. Editing needs the owner token, so the public demo shows it read-only.
@@ -167,7 +153,7 @@ The PayPal calls were moved to the APIMatic-generated PayPal TypeScript SDK (pac
 ## Tests
 
 ```bash
-npm test      # 123 tests, node:test, no network
+npm test      # node:test, no network
 npm run build
 ```
 

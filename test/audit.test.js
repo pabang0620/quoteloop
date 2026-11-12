@@ -108,3 +108,39 @@ test('mock PayPal refuses a charge above the payer balance (no fallback funding 
     assert.deepEqual(money(5000), { currency_code: 'USD', value: '50.00' })
   })
 })
+
+test('amount and time fallback matching only claims the visiting buyer\'s own co-signature', async () => {
+  const now = Date.parse('2026-11-12T10:00:00Z')
+  const cosign = (hash, visitor) => ({ cosign_hash: hash, visitor, amount: 245.86, invoice_number: `INV-${hash}`, created_at: '2026-11-12T09:30:00Z', exp: now / 1000 + 600, state: 'charged', rail: 'sandbox' })
+  const cosigns = [cosign('hashA', 'visitorA'), cosign('hashB', 'visitorB')]
+  const store = new Map()
+  const db = { list: () => cosigns, get: (t, k) => store.get(`${t}:${k}`), put: (t, k, v) => { store.set(`${t}:${k}`, v); return v } }
+  // One charge of $245.86 with no custom field, as the payer side may show it.
+  const paypal = { mode: 'sandbox', listTransactions: async () => ({ transaction_details: [{ transaction_info: { transaction_id: 'TX1', transaction_amount: { value: '-245.86' }, transaction_initiation_date: '2026-11-12T09:45:00Z' } }] }) }
+  const config = { activitySide: 'payer', searchLagMs: 120000 }
+  const run = (visitor) => auditActivity({ db, paypal, config, visitor, now })
+  const a = await run('visitorA')
+  assert.equal(a.rows.find((r) => r.transaction_id === 'TX1').cosign_hash, 'hashA')
+  const c = await run('visitorC')
+  const row = c.rows.find((r) => r.transaction_id === 'TX1')
+  assert.equal(row.status, 'alert')
+  assert.equal(row.cosign_hash, null)
+})
+
+test('the activity table says refunded after a refund', async () => {
+  await world({}, async (w) => {
+    const { data: deal } = await w.runDeal(A)
+    await w.supplier.ctx.primary.refundCapture(deal.charged.capture_id, 24586, deal.draft.invoice_number)
+    const { data: audit } = await w.buyerApi('POST', '/api/audit/run')
+    const { createServer } = await import('vite')
+    const { createElement } = await import('react')
+    const { renderToString } = await import('react-dom/server')
+    const vite = await createServer({ root: 'web', appType: 'custom', server: { middlewareMode: true }, logLevel: 'silent' })
+    try {
+      const T = await vite.ssrLoadModule('/src/components/Tabs.jsx')
+      const state = (await w.buyerApi('GET', '/api/state')).data
+      const html = renderToString(createElement(T.Activity, { buyer: { ...state, audit: { ...state.audit, last: audit } }, onChanged() {} }))
+      assert.match(html, />refunded<\/span>/)
+    } finally { await vite.close() }
+  })
+})

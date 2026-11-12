@@ -48,9 +48,10 @@ export async function auditActivity({ db, paypal, config, visitor = 'anonymous',
       const sameInvoice = !info.invoice_id || info.invoice_id === match.invoice_number
       if (sameAmount && sameInvoice) { status = 'matched'; note = 'Co-signature found in PayPal record' } else { match = null; note = 'Co-signature found but amount or invoice differs' }
     } else if (!custom) {
-      // The payer side of Transaction Search may not show the supplier's custom field: fall back to amount and time.
+      // The payer side of Transaction Search may not show the supplier's custom field: fall back to amount and time,
+      // only against this visitor's own co-signatures (another visitor's identical deal must not be claimed).
       const at = Date.parse(info.transaction_initiation_date)
-      match = cosigns.find((c) => !claimed.has(c.cosign_hash) && Number(c.amount) === Math.abs(amount) && at >= Date.parse(c.created_at) - 60000 && at <= c.exp * 1000 + 3600000)
+      match = cosigns.find((c) => !claimed.has(c.cosign_hash) && (!c.visitor || c.visitor === visitor) && Number(c.amount) === Math.abs(amount) && at >= Date.parse(c.created_at) - 60000 && at <= c.exp * 1000 + 3600000)
       if (match) { status = 'matched_weak'; note = 'Matched by amount and time only (custom field not visible)' }
     }
     if (!match && skip) ({ status, note } = skip)
