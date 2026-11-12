@@ -1,0 +1,214 @@
+{
+  "id": "m3-bulk-mandate",
+  "title": "Same kind of request under mandate B Bulk",
+  "label": "Recorded run: Claude Sonnet, 2026-11-12",
+  "recorded_at": "2026-11-12T05:31:34.344Z",
+  "model": "claude-sonnet-5-5",
+  "backend": "account",
+  "paypal": "bundled mock",
+  "setup": [],
+  "mandate_id": "MND-B-BULK",
+  "request_text": "Please order two cases of 12oz hot cups for Friday",
+  "buyer": {
+    "steps": [
+      {
+        "t_ms": 1929,
+        "type": "tool",
+        "name": "read_mandate",
+        "input": {},
+        "ok": true,
+        "summary": "ok"
+      },
+      {
+        "t_ms": 3274,
+        "type": "tool",
+        "name": "discover_supplier",
+        "input": {},
+        "ok": true,
+        "summary": "ok"
+      },
+      {
+        "t_ms": 12638,
+        "type": "tool",
+        "name": "send_rfq",
+        "input": {
+          "sku": "CUP-12-HOT",
+          "qty": 2,
+          "need_by": "Friday"
+        },
+        "ok": true,
+        "summary": "quote v1 with 2 option(s)"
+      },
+      {
+        "t_ms": 13476,
+        "type": "tool",
+        "name": "evaluate_quote",
+        "input": {},
+        "ok": true,
+        "summary": "recommends counter Q-0042-v1-b"
+      },
+      {
+        "t_ms": 20306,
+        "type": "tool",
+        "name": "counter",
+        "input": {
+          "option_id": "Q-0042-v1-b",
+          "pay_now": true
+        },
+        "ok": true,
+        "summary": "quote v2 with 1 option(s)"
+      },
+      {
+        "t_ms": 21463,
+        "type": "text",
+        "text": "Pay-now counter came back lower, so I'm checking it against the buyer rules before accepting."
+      },
+      {
+        "t_ms": 21624,
+        "type": "tool",
+        "name": "evaluate_quote",
+        "input": {},
+        "ok": true,
+        "summary": "recommends accept Q-0042-v2-a"
+      },
+      {
+        "t_ms": 22782,
+        "type": "tool",
+        "name": "accept_quote",
+        "input": {
+          "option_id": "Q-0042-v2-a"
+        },
+        "ok": true,
+        "summary": "draft received"
+      },
+      {
+        "t_ms": 23788,
+        "type": "tool",
+        "name": "verify_draft",
+        "input": {},
+        "ok": true,
+        "summary": "draft matches the signed quote"
+      },
+      {
+        "t_ms": 24744,
+        "type": "tool",
+        "name": "cosign_charge",
+        "input": {},
+        "ok": true,
+        "summary": "status paid"
+      },
+      {
+        "t_ms": 26494,
+        "type": "text",
+        "text": "I ordered 3 cases of 12oz hot cups from Northbeam Supply, not the 2 you asked for, and the charge went through (invoice INV-0042, $339.98, paid now). The supplier's 2-case price was $128.00 per case, which is over the $125.00 cap. The 3-case tier was allowed, and after a pay-now counter it came to $115.64 per case. The supplier's note says the cups are in stock for Friday."
+      }
+    ],
+    "text": "I ordered 3 cases of 12oz hot cups from Northbeam Supply, not the 2 you asked for, and the charge went through (invoice INV-0042, $339.98, paid now). The supplier's 2-case price was $128.00 per case, which is over the $125.00 cap. The 3-case tier was allowed, and after a pay-now counter it came to $115.64 per case. The supplier's note says the cups are in stock for Friday.",
+    "duration_ms": 26969
+  },
+  "supplier": [
+    {
+      "steps": [
+        {
+          "t_ms": 2554,
+          "type": "tool",
+          "name": "list_catalog",
+          "input": {},
+          "ok": true,
+          "summary": "read the catalog and stock"
+        },
+        {
+          "t_ms": 2575,
+          "type": "tool",
+          "name": "price_options",
+          "input": {
+            "sku": "CUP-12-HOT",
+            "qty": 2
+          },
+          "ok": true,
+          "summary": "priced 2 x CUP-12-HOT"
+        },
+        {
+          "t_ms": 4320,
+          "type": "tool",
+          "name": "price_options",
+          "input": {
+            "sku": "CUP-12-HOT",
+            "qty": 3
+          },
+          "ok": true,
+          "summary": "priced 3 x CUP-12-HOT"
+        },
+        {
+          "t_ms": 5972,
+          "type": "tool",
+          "name": "issue_quote",
+          "input": {
+            "price_option_ids": [
+              "po_1",
+              "po_2"
+            ],
+            "note": "Requested: 2 cases CUP-12-HOT (1,000 cups/case), in stock for Friday need-by. Optional upsell: 3 cases reaches the next price tier for a lower per-case price. Terms NET_30."
+          },
+          "ok": true,
+          "summary": "quote sent with 2 option(s)"
+        },
+        {
+          "t_ms": 7598,
+          "type": "text",
+          "text": "I sent quote Q-0042 with two options for CUP-12-HOT, both on NET_30 terms:\n\n- **Requested:** 2 cases at $128.00 per case, $256.00 total. The cups are in stock for the Friday need-by.\n- **Upsell:** 3 cases at $118.00 per case, $354.00 total. This is the next price tier up, so the per-case price is lower.\n\nThe pay-now discount was not applied to either option."
+        }
+      ],
+      "text": "I sent quote Q-0042 with two options for CUP-12-HOT, both on NET_30 terms:\n\n- **Requested:** 2 cases at $128.00 per case, $256.00 total. The cups are in stock for the Friday need-by.\n- **Upsell:** 3 cases at $118.00 per case, $354.00 total. This is the next price tier up, so the per-case price is lower.\n\nThe pay-now discount was not applied to either option.",
+      "duration_ms": 8153,
+      "round": 1,
+      "kind": "rfq"
+    },
+    {
+      "steps": [
+        {
+          "t_ms": 2247,
+          "type": "tool",
+          "name": "price_options",
+          "input": {
+            "sku": "CUP-12-HOT",
+            "qty": 3,
+            "pay_now": true
+          },
+          "ok": true,
+          "summary": "priced 3 x CUP-12-HOT with pay-now"
+        },
+        {
+          "t_ms": 3493,
+          "type": "tool",
+          "name": "issue_quote",
+          "input": {
+            "price_option_ids": [
+              "po_1"
+            ],
+            "note": "Re-priced for round 2: 3 cases of CUP-12-HOT with the pay-now discount applied, due on receipt."
+          },
+          "ok": true,
+          "summary": "quote sent with 1 option(s)"
+        },
+        {
+          "t_ms": 4717,
+          "type": "text",
+          "text": "I sent quote Q-0042 (version 2) for 3 cases of CUP-12-HOT with the pay-now discount applied. The total is 33,998 cents, with payment due on receipt. The unit price is 11,564 cents, or 11,333 cents net of the discount."
+        }
+      ],
+      "text": "I sent quote Q-0042 (version 2) for 3 cases of CUP-12-HOT with the pay-now discount applied. The total is 33,998 cents, with payment due on receipt. The unit price is 11,564 cents, or 11,333 cents net of the discount.",
+      "duration_ms": 5508,
+      "round": 2,
+      "kind": "counter"
+    }
+  ],
+  "outcome": {
+    "status": "paid",
+    "quote_id": "Q-0042",
+    "sku": "CUP-12-HOT",
+    "qty": 3,
+    "total_cents": 33998,
+    "decided_by": "claude"
+  }
+}

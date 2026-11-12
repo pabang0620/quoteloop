@@ -1,0 +1,37 @@
+{
+  "name": "quoteloop",
+  "version": "1.0.0",
+  "description": "QuoteLoop: a buyer agent and a supplier agent negotiate a B2B quote and settle it on PayPal, as two separate services",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node scripts/run-all.js",
+    "demo:video": "vite build && node scripts/demo-video.js",
+    "start:mockpaypal": "node mockpaypal/index.js",
+    "start:supplier": "node supplier/index.js",
+    "start:buyer": "node buyer/index.js",
+    "dev:web": "vite",
+    "build": "vite build",
+    "test": "node --disable-warning=ExperimentalWarning --import ./test/forceMock.js --test test/*.test.js",
+    "record:runs": "node --disable-warning=ExperimentalWarning scripts/record-runs.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.322",
+    "@anthropic-ai/sdk": "^1.6.0",
+    "@paypal/agent-toolkit": "^1.11.0",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "paypal": "github:context-plugins/paypal-typescript-sdk#main",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.2.1",
+    "vite": "^8.3.6"
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "run_on": "2026-11-12",
+  "environment": "PayPal sandbox (api-m.sandbox.paypal.com), run by the team with the app's normal flow",
+  "source": "VERIFY.md",
+  "passed": [
+    {
+      "id": "1",
+      "check": "Vault is enabled for the supplier app (setup token)",
+      "evidence": [
+        "setup token 5EP90190LE005524D, status PAYER_ACTION_REQUIRED"
+      ]
+    },
+    {
+      "id": "2",
+      "check": "Setup token and payment token, personal payer",
+      "evidence": [
+        "payment token 26b352559v815782v"
+      ]
+    },
+    {
+      "id": "3",
+      "check": "A business sandbox account approves as payer",
+      "evidence": [
+        "setup token 6BF52222XD5858933",
+        "payment token 9dm33460le7540147"
+      ]
+    },
+    {
+      "id": "4",
+      "check": "Charge a saved PayPal with no payer present (Orders CAPTURE with vault_id)",
+      "evidence": [
+        "order 1ST51304L6128915T, capture 2BG67109PE226381Y",
+        "deal Q-0044: order 6J566139G5956301J, capture 7UE89006K1324024J",
+        "deal Q-0046: order 5M8367836C9634727, capture 4H098055JS548532U"
+      ]
+    },
+    {
+      "id": "5",
+      "check": "The same invoice_id is refused a second time",
+      "evidence": [
+        "422 DUPLICATE_INVOICE_ID"
+      ]
+    },
+    {
+      "id": "6",
+      "check": "Invoice marked paid (method OTHER with the capture id in the note)",
+      "evidence": [
+        "invoice INV2-6L88-8D8L-HQLW-J3GJ MARKED_AS_PAID"
+      ],
+      "note": "method PAYPAL with an Orders capture id answered 404, so the app uses method OTHER"
+    },
+    {
+      "id": "9",
+      "check": "Invoice sent without email; a blocked draft is deleted; item discounts sum to the quote total",
+      "evidence": [
+        "blocked draft INV2-LQCR-2EBU-GPLP-55A2 deleted",
+        "draft total 245.86 = quote total"
+      ]
+    },
+    {
+      "id": "10",
+      "check": "Transaction Search permission on the app (granted 2026-11-12)",
+      "evidence": [
+        "token carries reporting/search/read",
+        "GET /v1/reporting/transactions 200, 98 rows for 3 days",
+        "in-app audit read the sandbox with no permission card"
+      ]
+    },
+    {
+      "id": "11",
+      "check": "Judge-account refunds complete (partial: balance comparison needs Transaction Search)",
+      "evidence": [
+        "refunds 13W805385U376981X, 9KT881721J397374J, 2K793568HG995150D COMPLETED"
+      ]
+    },
+    {
+      "id": "12",
+      "check": "APIMatic SDK read-only smoke on balances and transactions",
+      "evidence": [
+        "searchBalances 200",
+        "searchTransactions 200, 98 rows"
+      ]
+    },
+    {
+      "id": "13",
+      "check": "Repeating a PayPal-Request-Id returns the first result",
+      "evidence": [
+        "payment token 26b352559v815782v",
+        "order 1ST51304L6128915T",
+        "refund 9KT881721J397374J"
+      ]
+    },
+    {
+      "id": "14",
+      "check": "SDK default fields accepted (setup token, person-with-no-agent order)",
+      "evidence": [
+        "order 0HL006434N1669227, capture 6JG922279X671711U"
+      ]
+    },
+    {
+      "id": "15",
+      "check": "Prefer: return=representation returns the capture in the order answer",
+      "evidence": [
+        "purchase_units[0].payments.captures[0] COMPLETED with custom_id and invoice_id"
+      ]
+    }
+  ],
+  "not_passed": [
+    {
+      "id": "7",
+      "status": "PARTIAL",
+      "check": "Buyer-side Transaction Search shows the co-signature hash",
+      "why": "Permission granted. Earlier in-app charges 7UE89006K1324024J and 4H098055JS548532U show in Transaction Search with the co-signature hash as custom_field and the invoice number. Our only REST app belongs to the supplier, so this is the supplier account's view (BUYER_ACTIVITY_SIDE=payee); a payer-owned app was not available. New charges 6ET89834W30050123 and 2J9177124Y098483N had not appeared after 10 minutes (PayPal: up to 3 hours), so the in-app matched row is not yet recorded."
+    },
+    {
+      "id": "8",
+      "status": "FAIL",
+      "check": "A payer with no funding source declines a charge above its balance",
+      "why": "The test payer had a linked bank and card, and PayPal funded the charge from them. The app makes no claim about this."
+    },
+    {
+      "id": "16",
+      "status": "NOT RUN",
+      "check": "INVOICING.INVOICE.PAID webhook on the sandbox",
+      "why": "Needs a registered webhook and a public host. Tested on the mock only."
+    }
+  ]
+}

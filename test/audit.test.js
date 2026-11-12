@@ -1,0 +1,110 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { startWorld } from './helpers.js'
+import { auditActivity } from '../buyer/audit.js'
+import { money } from '../shared/money.js'
+
+const world = async (opts, fn) => {
+  const w = await startWorld(opts)
+  try { await fn(w) } finally { await w.close() }
+}
+const A = { mandate_id: 'MND-A-LEAN', sku: 'CUP-12-HOT', qty: 2 }
+
+test('audit pairs the charge in the buyer\'s own PayPal records with the co-signature it issued', async () => {
+  await world({}, async (w) => {
+    const { data: deal } = await w.runDeal(A)
+    const { data: audit } = await w.buyerApi('POST', '/api/audit/run')
+    const row = audit.rows.find((r) => r.kind === 'charge')
+    assert.equal(row.status, 'matched')
+    assert.equal(row.cosign_hash, deal.cosign_hash)
+    assert.equal(row.amount, -245.86)
+    assert.equal(audit.alerts.length, 0)
+  })
+})
+
+test('a charge with no co-signature raises an alert and stops further co-signing until a human resumes', async () => {
+  await world({}, async (w) => {
+    // The supplier (or anyone with the saved token) charges $19.99 without asking the buyer agent.
+    const vaultId = w.supplier.ctx.db.get('vaults', 'brightcup-cafes').vault_id
+    await w.supplier.ctx.primary.chargeVault({ vaultId, amountCents: 1999, invoiceId: 'INV-ROGUE', customId: 'not-a-cosign', requestId: 'rogue-1' })
+    const { data: audit } = await w.buyerApi('POST', '/api/audit/run')
+    assert.equal(audit.alerts.length, 1)
+    assert.equal(audit.alerts[0].amount, -19.99)
+    const state = (await w.buyerApi('GET', '/api/state')).data
+    assert.equal(state.audit.state.paused, true)
+    const { data: deal } = await w.runDeal(A)
+    assert.equal(deal.status, 'failed')
+    assert.match(deal.error, /Co-signing is paused/)
+    assert.equal(w.mock.orders.size, 1, 'only the rogue charge exists')
+    await w.buyerApi('POST', '/api/audit/resume')
+    const after = await w.runDeal(A)
+    assert.equal(after.data.status, 'paid')
+  })
+})
+
+test('refunds coming in are not charges: no false alarm, and the original shows refunded', async () => {
+  await world({}, async (w) => {
+    const { data: deal } = await w.runDeal(A)
+    await w.supplier.ctx.primary.refundCapture(deal.charged.capture_id, 24586, deal.draft.invoice_number)
+    const { data: audit } = await w.buyerApi('POST', '/api/audit/run')
+    assert.equal(audit.alerts.length, 0)
+    const charge = audit.rows.find((r) => r.kind === 'charge')
+    assert.equal(charge.refunded, true)
+    assert.equal(charge.status, 'matched')
+    const incoming = audit.rows.find((r) => r.kind === 'incoming')
+    assert.equal(incoming.status, 'refund')
+    assert.equal(incoming.refund_of, charge.transaction_id)
+  })
+})
+
+test('an incoming payment that refunds nothing of ours is recorded quietly, with no alert', async () => {
+  await world({}, async (w) => {
+    w.mock.seedTransaction({ account: 'judge', id: 'GIFT00000000001XX', amount: '5.00', code: 'T0001' })
+    const { data: audit } = await w.buyerApi('POST', '/api/audit/run')
+    assert.equal(audit.alerts.length, 0)
+    assert.equal(audit.rows[0].status, 'unmatched_incoming')
+  })
+})
+
+test('when the payer side cannot see the custom field, the audit falls back to amount and time and says so', async () => {
+  await world({ mock: { payerSeesCustomField: false } }, async (w) => {
+    await w.runDeal(A)
+    const { data: audit } = await w.buyerApi('POST', '/api/audit/run')
+    assert.equal(audit.rows.find((r) => r.kind === 'charge').status, 'matched_weak')
+    assert.equal(audit.alerts.length, 0)
+  })
+})
+
+test('Transaction Search lag: a fresh deal is pending, an older one is matched', async () => {
+  await world({ mock: { txnLagMs: 3 * 3600 * 1000 } }, async (w) => {
+    await w.runDeal(A)
+    const { data: audit } = await w.buyerApi('POST', '/api/audit/run')
+    assert.equal(audit.rows.find((r) => r.kind === 'cosign_only').status, 'pending')
+    assert.equal(audit.alerts.length, 0)
+    // Three hours pass: PayPal now shows the charge, so the same call matches it and the pending row is gone.
+    for (const t of w.mock.txns) t.visibleAt = 0
+    const later = await auditActivity({ db: w.buyer.ctx.db, paypal: w.buyer.ctx.paypal, config: w.buyer.ctx.config, visitor: 'testvisitor' })
+    assert.equal(later.rows.find((r) => r.kind === 'charge').status, 'matched')
+    assert.equal(later.rows.some((r) => r.status === 'pending'), false)
+  })
+})
+
+test('the audit reads PayPal, not the supplier: it still raises the alarm when the supplier lies', async () => {
+  await world({}, async (w) => {
+    // A supplier that reports no charge at all still cannot hide it from the buyer's own record.
+    const vaultId = w.supplier.ctx.db.get('vaults', 'brightcup-cafes').vault_id
+    await w.supplier.ctx.primary.chargeVault({ vaultId, amountCents: 5000, invoiceId: 'INV-QUIET', customId: '', requestId: 'quiet-1' })
+    assert.equal(w.supplier.ctx.db.list('charges').length, 0)
+    const audit = await auditActivity({ db: w.buyer.ctx.db, paypal: w.buyer.ctx.paypal, config: w.buyer.ctx.config })
+    assert.equal(audit.alerts.length, 1)
+  })
+})
+
+test('mock PayPal refuses a charge above the payer balance (no fallback funding source)', async () => {
+  await world({}, async (w) => {
+    w.mock.accounts.judge.balance = 1000
+    const vaultId = w.supplier.ctx.db.get('vaults', 'brightcup-cafes').vault_id
+    await assert.rejects(() => w.supplier.ctx.primary.chargeVault({ vaultId, amountCents: 5000, invoiceId: 'INV-BIG', customId: 'x', requestId: 'big-1' }), /INSTRUMENT_DECLINED/)
+    assert.deepEqual(money(5000), { currency_code: 'USD', value: '50.00' })
+  })
+})
