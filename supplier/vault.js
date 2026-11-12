@@ -48,6 +48,34 @@ export async function autoConnectMock({ db, config, paypal, buyerId }) {
   return completeVaultSetup({ db, config, paypal, setupId: setup_id })
 }
 
+// The bundled mock PayPal keeps its vault in memory, so after a restart the saved mock-rail tokens in this
+// supplier's database point at nothing and every charge fails with INVALID_RESOURCE_ID. At start-up, ask the mock
+// about each one and forget the tokens it no longer knows; autoConnectMock and simulatedVault then save fresh ones.
+// Only a clear 404 drops a record; an unreachable mock is retried, then left alone.
+export async function dropLostMockVaults({ db, paypalFor, attempts = 10, waitMs = 500 }) {
+  const dropped = []
+  const rows = db.dump().filter((r) => r.col === 'vaults').map((r) => ({ id: r.id, v: JSON.parse(r.body) }))
+  for (const { id, v } of rows) {
+    if (v.rail !== 'mock') continue
+    const paypal = paypalFor(id.startsWith('sim:') ? 'simulated' : 'mock')
+    for (let i = 1; ; i += 1) {
+      try {
+        await paypal.getPaymentToken(v.vault_id)
+        break
+      } catch (err) {
+        if (err.status === 404) {
+          db.del('vaults', id)
+          dropped.push(id)
+          break
+        }
+        if (i >= attempts) throw err
+        await new Promise((r) => setTimeout(r, waitMs))
+      }
+    }
+  }
+  return dropped
+}
+
 // Cross-operation invariant: a vault id may be charged only if this supplier saved it (for any buyer, any rail).
 export function assertKnownVault(db, vaultId) {
   if (!db.list('vaults', (v) => v.vault_id === vaultId).length) throw new HttpError(403, 'That saved PayPal is not one this supplier stored', 'unknown_vault')

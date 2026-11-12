@@ -28,6 +28,9 @@ export function createMockPaypalApp(options = {}) {
   app.post('/v3/vault/payment-tokens', (req, res, next) => {
     try { res.status(200).json(state.createPaymentToken(auth(req), req.body)) } catch (err) { next(err) }
   })
+  app.get('/v3/vault/payment-tokens/:id', (req, res, next) => {
+    try { res.json(state.getPaymentToken(auth(req), req.params.id)) } catch (err) { next(err) }
+  })
   app.delete('/v3/vault/payment-tokens/:id', (req, res, next) => {
     try {
       const token = state.vault.get(req.params.id)

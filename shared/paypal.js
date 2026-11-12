@@ -90,6 +90,7 @@ export function createPaypal({ label, clientId, clientSecret, mockBase, mockClie
       },
     }, { requestId: requestId || randomBytes(12).toString('hex') }),
     createPaymentToken: (setupTokenId, { requestId } = {}) => rest('POST', '/v3/vault/payment-tokens', { payment_source: { token: { id: setupTokenId, type: 'SETUP_TOKEN' } } }, { requestId: requestId || randomBytes(12).toString('hex') }),
+    getPaymentToken: (id) => rest('GET', `/v3/vault/payment-tokens/${encodeURIComponent(id)}`),
 
     // ---- Orders ----
     chargeVault: ({ vaultId, amountCents, invoiceId, customId, requestId }) => rest('POST', '/v2/checkout/orders', {

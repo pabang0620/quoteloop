@@ -95,6 +95,14 @@ export function createState(options = {}) {
     return { id, customer: { id: `CUST${pid(8)}` }, payment_source: { paypal: { email_address: payer.email, payer_id: payer.payerId, usage_type: 'MERCHANT' } }, links: [] }
   }
 
+  function getPaymentToken(acct, id) {
+    requireMerchant(acct)
+    const token = vault.get(id)
+    if (!token || !token.active || token.merchant !== acct.key) throw new HttpError(404, 'RESOURCE_NOT_FOUND: payment token', 'RESOURCE_NOT_FOUND')
+    const payer = accounts[token.payer]
+    return { id, customer: { id: `CUST${pid(8)}` }, payment_source: { paypal: { email_address: payer.email, payer_id: payer.payerId, usage_type: 'MERCHANT' } }, links: [] }
+  }
+
   // ---------- Orders and captures ----------
   function recordTxn(acct, { id, code, amount, invoiceId, customId, ref, status = 'S', at }) {
     const created = at || Date.now()
@@ -342,7 +350,7 @@ export function createState(options = {}) {
   return {
     cfg, accounts, vault, orders, captures, refunds, invoices, txns,
     issueToken, accountFor, byClient,
-    createSetupToken, approveSetup, createPaymentToken,
+    createSetupToken, approveSetup, createPaymentToken, getPaymentToken,
     createOrder, approveOrder, captureOrder, getOrder, refundCapture, settlePendingRefunds,
     nextInvoiceNumber, createInvoice, getInvoice, sendInvoice, deleteInvoice, recordPayment, recordRefund,
     createProduct, listProducts, showProduct, listTransactions, balances, seedTransaction,
